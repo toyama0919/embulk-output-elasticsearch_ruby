@@ -1,0 +1,7 @@
+*~
+/pkg/
+/tmp/
+/.bundle/
+/vendor/
+/Gemfile.lock
+.ruby-version
