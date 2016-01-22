@@ -12,8 +12,10 @@ module Embulk
           "nodes" => config.param("nodes", :array),
           "request_timeout" => config.param("request_timeout", :integer, default: 60),
           "index" => config.param("index", :string),
+          "replace_mode" => config.param("replace_mode", :bool, default: false),
           "reload_connections" => config.param("reload_connections", :bool, default: true),
           "reload_on_failure" => config.param("reload_on_failure", :bool, default: false),
+          "delete_old_index" => config.param("delete_old_index", :bool, default: false),
           "index_type" => config.param("index_type", :string),
           "id_keys" => config.param("id_keys", :array, default: nil),
           "id_format" => config.param("id_format", :string, default: nil),
@@ -22,6 +24,7 @@ module Embulk
           "retry_on_failure" => config.param("retry_on_failure", :integer, default: 5),
           "time_key" => config.param("id_format", :string, default: nil),
         }
+        task['time_value'] = Time.now.strftime('%Y.%m.%d.%H.%M.%S')
 
         task_reports = yield(task)
         next_config_diff = {}
@@ -37,7 +40,6 @@ module Embulk
 
       def init
         @nodes = task["nodes"]
-        @index = task["index"]
         @index_type = task["index_type"]
         @id_keys = task["id_keys"]
         @id_format = task["id_format"]
@@ -47,6 +49,15 @@ module Embulk
         @reload_on_failure = task["reload_on_failure"]
         @array_columns = task["array_columns"]
         @retry_on_failure = task["retry_on_failure"]
+        @delete_old_index = task["delete_old_index"]
+        @replace_mode = task["replace_mode"]
+        @alias = task["index"]
+        @index_prefix = "#{task['index']}-#{task['index_type']}"
+        if @replace_mode
+          @index = "#{@index_prefix}-#{task['time_value']}"
+        else
+          @index = task['index']
+        end
 
         @nodes =@nodes.map do |node|
           Hash[node.map{ |k, v| [k.to_sym, v] }]
@@ -96,6 +107,11 @@ module Embulk
       end
 
       def commit
+        if @replace_mode
+          create_aliases(@alias, @index)
+          delete_aliases
+        end
+
         task_report = {}
         return task_report
       end
@@ -137,6 +153,28 @@ module Embulk
           raise "Could not push logs to Elasticsearch after #{retries} retries. #{e.message}"
         end
         @bulk_message.clear
+      end
+
+      def create_aliases(als, index)
+        @client.indices.update_aliases body: {
+          actions: [{ add: { index: index, alias: als } }]
+        }
+        Embulk.logger.info "created alias: #{als}, index: #{index}"
+      end
+
+      def delete_aliases
+        indices = @client.indices.get_aliases.select { |key, value| value['aliases'].include? @alias }.keys
+        indices = indices.select { |index| /(\w*)#{@index_prefix}-(\w*)/ =~ index }
+        indices.each { |index|
+          if index != @index
+            @client.indices.delete_alias index: index, name: @alias
+            Embulk.logger.info "deleted alias: #{@alias}, index: #{index}"
+            if @delete_old_index
+              @client.indices.delete index: index
+              Embulk.logger.info "deleted index: #{index}"
+            end
+          end
+        }
       end
     end
   end
