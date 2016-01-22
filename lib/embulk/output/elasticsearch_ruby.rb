@@ -164,7 +164,7 @@ module Embulk
 
       def delete_aliases
         indices = @client.indices.get_aliases.select { |key, value| value['aliases'].include? @alias }.keys
-        indices = indices.select { |index| /(\w*)#{@index_prefix}-(\w*)/ =~ index }
+        indices = indices.select { |index| /^#{@index_prefix}-(\d*)/ =~ index }
         indices.each { |index|
           if index != @index
             @client.indices.delete_alias index: index, name: @alias
