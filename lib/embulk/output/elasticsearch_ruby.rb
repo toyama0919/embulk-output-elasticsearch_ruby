@@ -22,7 +22,7 @@ module Embulk
           "array_columns" => config.param("array_columns", :array, default: nil),
           "bulk_actions" => config.param("bulk_actions", :integer, default: 1000),
           "retry_on_failure" => config.param("retry_on_failure", :integer, default: 5),
-          "time_key" => config.param("id_format", :string, default: nil),
+          "time_key" => config.param("time_key", :string, default: nil),
         }
         task['time_value'] = Time.now.strftime('%Y.%m.%d.%H.%M.%S')
 
