@@ -31,6 +31,62 @@ module Embulk
         return next_config_diff
       end
 
+      def self.cleanup(task, schema, count, task_reports)
+        if task['replace_mode']
+          client = create_client(task)
+          create_aliases(client, task['index'], get_index(task))
+          delete_aliases(client, task)
+        end
+      end
+
+      def self.create_client(task)
+        transport = Elasticsearch::Transport::Transport::HTTP::Faraday.new(
+          {
+            hosts: task['nodes'].map{ |node| Hash[node.map{ |k, v| [k.to_sym, v] }] },
+            options: {
+              reload_connections: task['reload_connections'],
+              reload_on_failure: task['reload_on_failure'],
+              retry_on_failure: task['retry_on_failure'],
+              transport_options: {
+                request: { timeout: task['request_timeout'] }
+              }
+            }
+          }
+        )
+
+        Elasticsearch::Client.new transport: transport
+      end
+
+      def self.create_aliases(client, als, index)
+        client.indices.update_aliases body: {
+          actions: [{ add: { index: index, alias: als } }]
+        }
+        Embulk.logger.info "created alias: #{als}, index: #{index}"
+      end
+
+      def self.delete_aliases(client, task)
+        indices = client.indices.get_aliases.select { |key, value| value['aliases'].include? task['index'] }.keys
+        indices = indices.select { |index| /^#{get_index_prefix(task)}-(\d*)/ =~ index }
+        indices.each { |index|
+          if index != get_index(task)
+            client.indices.delete_alias index: index, name: task['index']
+            Embulk.logger.info "deleted alias: #{task['index']}, index: #{index}"
+            if task['delete_old_index']
+              client.indices.delete index: index
+              Embulk.logger.info "deleted index: #{index}"
+            end
+          end
+        }
+      end
+
+      def self.get_index(task)
+        task['replace_mode'] ? "#{get_index_prefix(task)}-#{task['time_value']}" : task['index']
+      end
+
+      def self.get_index_prefix(task)
+        "#{task['index']}-#{task['index_type']}"
+      end
+
       #def self.resume(task, schema, count, &control)
       #  task_reports = yield(task)
       #
@@ -52,31 +108,9 @@ module Embulk
         @delete_old_index = task["delete_old_index"]
         @replace_mode = task["replace_mode"]
         @alias = task["index"]
-        @index_prefix = "#{task['index']}-#{task['index_type']}"
-        if @replace_mode
-          @index = "#{@index_prefix}-#{task['time_value']}"
-        else
-          @index = task['index']
-        end
+        @index = self.class.get_index(task)
 
-        @nodes =@nodes.map do |node|
-          Hash[node.map{ |k, v| [k.to_sym, v] }]
-        end
-        transport = Elasticsearch::Transport::Transport::HTTP::Faraday.new(
-          {
-            hosts: @nodes,
-            options: {
-              reload_connections: @reload_connections,
-              reload_on_failure: @reload_on_failure,
-              retry_on_failure: @retry_on_failure,
-              transport_options: {
-                request: { timeout: @request_timeout }
-              }
-            }
-          }
-        )
-
-        @client = Elasticsearch::Client.new transport: transport
+        @client = self.class.create_client(task)
         @bulk_message = []
       end
 
@@ -107,11 +141,6 @@ module Embulk
       end
 
       def commit
-        if @replace_mode
-          create_aliases(@alias, @index)
-          delete_aliases
-        end
-
         task_report = {}
         return task_report
       end
@@ -153,28 +182,6 @@ module Embulk
           raise "Could not push logs to Elasticsearch after #{retries} retries. #{e.message}"
         end
         @bulk_message.clear
-      end
-
-      def create_aliases(als, index)
-        @client.indices.update_aliases body: {
-          actions: [{ add: { index: index, alias: als } }]
-        }
-        Embulk.logger.info "created alias: #{als}, index: #{index}"
-      end
-
-      def delete_aliases
-        indices = @client.indices.get_aliases.select { |key, value| value['aliases'].include? @alias }.keys
-        indices = indices.select { |index| /^#{@index_prefix}-(\d*)/ =~ index }
-        indices.each { |index|
-          if index != @index
-            @client.indices.delete_alias index: index, name: @alias
-            Embulk.logger.info "deleted alias: #{@alias}, index: #{index}"
-            if @delete_old_index
-              @client.indices.delete index: index
-              Embulk.logger.info "deleted index: #{index}"
-            end
-          end
-        }
       end
     end
   end
