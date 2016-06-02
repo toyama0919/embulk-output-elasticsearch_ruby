@@ -100,14 +100,8 @@ module Embulk
         @id_keys = task["id_keys"]
         @id_format = task["id_format"]
         @bulk_actions = task["bulk_actions"]
-        @request_timeout = task["request_timeout"]
-        @reload_connections = task["reload_connections"]
-        @reload_on_failure = task["reload_on_failure"]
         @array_columns = task["array_columns"]
         @retry_on_failure = task["retry_on_failure"]
-        @delete_old_index = task["delete_old_index"]
-        @replace_mode = task["replace_mode"]
-        @alias = task["index"]
         @index = self.class.get_index(task)
 
         @client = self.class.create_client(task)
