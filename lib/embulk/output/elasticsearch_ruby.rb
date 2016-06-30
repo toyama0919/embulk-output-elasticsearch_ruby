@@ -13,6 +13,7 @@ module Embulk
           "request_timeout" => config.param("request_timeout", :integer, default: 60),
           "index" => config.param("index", :string),
           "replace_mode" => config.param("replace_mode", :bool, default: false),
+          "update_mode" => config.param("update_mode", :bool, default: false),
           "reload_connections" => config.param("reload_connections", :bool, default: true),
           "reload_on_failure" => config.param("reload_on_failure", :bool, default: false),
           "delete_old_index" => config.param("delete_old_index", :bool, default: false),
@@ -25,6 +26,10 @@ module Embulk
           "time_key" => config.param("time_key", :string, default: nil),
         }
         task['time_value'] = Time.now.strftime('%Y.%m.%d.%H.%M.%S')
+
+        if task['replace_mode'] and task['update_mode']
+          raise "Cannot choose both of replace and update. Please choose one of them."
+        end
 
         task_reports = yield(task)
         next_config_diff = {}
@@ -102,6 +107,7 @@ module Embulk
         @bulk_actions = task["bulk_actions"]
         @array_columns = task["array_columns"]
         @retry_on_failure = task["retry_on_failure"]
+        @update_mode = task["update_mode"]
         @index = self.class.get_index(task)
 
         @client = self.class.create_client(task)
@@ -114,8 +120,10 @@ module Embulk
       def add(page)
         page.each do |record|
           hash = Hash[schema.names.zip(record)]
-          meta = { index: { _index: @index, _type: @index_type } }
-          meta[:index][:_id] = generate_id(@id_format, hash, @id_keys) unless @id_keys.nil?
+          action = @update_mode ? :update : :index
+          meta = {}
+          meta[action] = { _index: @index, _type: @index_type }
+          meta[action][:_id] = generate_id(@id_format, hash, @id_keys) unless @id_keys.nil?
           source = generate_array(hash)
           @bulk_message << meta
           @bulk_message << source
@@ -143,6 +151,7 @@ module Embulk
 
       def generate_array(record)
         result = {}
+
         record.each { |key, value|
           result[key] = value
           next unless @array_columns
@@ -154,7 +163,7 @@ module Embulk
             end
           end
         }
-        result
+        @update_mode ? {doc: result} : result
       end
 
       def generate_id(template, record, id_keys)
