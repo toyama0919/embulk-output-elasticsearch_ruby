@@ -154,7 +154,7 @@ module Embulk
 
         record.each { |key, value|
           result[key] = value
-          next unless @array_columns
+          next if (value.nil? || !@array_columns)
           @array_columns.each do |array_column|
             if array_column['name'] == key
               array_value = value.split(array_column['delimiter']).reject(&:empty?)
