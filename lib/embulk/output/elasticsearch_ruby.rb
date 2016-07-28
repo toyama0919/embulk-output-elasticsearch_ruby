@@ -175,7 +175,7 @@ module Embulk
         begin
           @client.bulk body: @bulk_message
           Embulk.logger.info "bulk: #{@bulk_message.size/2} success."
-        rescue *@client.transport.host_unreachable_exceptions => e
+        rescue => e
           if retries < @retry_on_failure
             retries += 1
             Embulk.logger.warn "Could not push logs to Elasticsearch, resetting connection and trying again. #{e.message}"
