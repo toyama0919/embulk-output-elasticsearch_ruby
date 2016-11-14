@@ -1,6 +1,6 @@
 # Elasticsearch Ruby output plugin for Embulk
 
-TODO: Write short description here and embulk-output-elasticsearch_ruby.gemspec file.
+Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X compatible.
 
 ## Overview
 
@@ -10,18 +10,39 @@ TODO: Write short description here and embulk-output-elasticsearch_ruby.gemspec 
 * **Cleanup supported**: yes
 
 ## Configuration
-
-- **option1**: description (integer, required)
-- **option2**: description (string, default: `"myvalue"`)
-- **option3**: description (string, default: `null`)
+  - **nodes**: nodes (array)
+    - **host**: index (string)
+    - **port**: index (integer)
+  - **request_timeout**: request_timeout (integer, default: 60)
+  - **index**: index (string)
+  - **replace_mode**: replace_mode (bool, default: false)
+  - **update_mode**: update_mode (bool, default: false)
+  - **reload_connections**: reload_connections (bool, default: true)
+  - **reload_on_failure**: reload_on_failure (bool, default: false)
+  - **delete_old_index**: delete_old_index (bool, default: false)
+  - **index_type**: index_type (string)
+  - **id_keys**: id_keys (array, default: nil)
+  - **id_format**: id_format (string, default: nil)
+  - **array_columns**: array_columns (array, default: nil)
+  - **bulk_actions**: bulk_actions (integer, default: 1000)
+  - **retry_on_failure**: retry_on_failure (integer, default: 5)
+  - **time_key**: time_key (string, default: nil)
 
 ## Example
 
 ```yaml
 out:
   type: elasticsearch_ruby
-  option1: example1
-  option2: example2
+  nodes:
+    - {host: {{ env.ES_HOST }}, port: 9200}
+  index: crawl
+  index_type: page
+  bulk_actions: 1000
+  request_timeout: 60
+  update_mode: true
+  id_format: "%s"
+  id_keys:
+    - _id
 ```
 
 
