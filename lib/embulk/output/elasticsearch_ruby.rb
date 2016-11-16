@@ -4,7 +4,7 @@ require 'elasticsearch'
 module Embulk
   module Output
 
-    class ElasticsearchRuby < OutputPlugin
+    class Elasticsearch < OutputPlugin
       Plugin.register_output("elasticsearch_ruby", self)
 
       def self.transaction(config, schema, count, &control)
@@ -45,7 +45,7 @@ module Embulk
       end
 
       def self.create_client(task)
-        transport = Elasticsearch::Transport::Transport::HTTP::Faraday.new(
+        transport = ::Elasticsearch::Transport::Transport::HTTP::Faraday.new(
           {
             hosts: task['nodes'].map{ |node| Hash[node.map{ |k, v| [k.to_sym, v] }] },
             options: {
@@ -59,7 +59,7 @@ module Embulk
           }
         )
 
-        Elasticsearch::Client.new transport: transport
+        ::Elasticsearch::Client.new transport: transport
       end
 
       def self.create_aliases(client, als, index)
