@@ -3,8 +3,8 @@ Gem::Specification.new do |spec|
   spec.name          = "embulk-output-elasticsearch_ruby"
   spec.version       = "0.1.0"
   spec.authors       = ["toyama0919"]
-  spec.summary       = "Elasticsearch Ruby output plugin for Embulk. Elasticsearch 1.X AND 2.X compatible."
-  spec.description   = "Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X compatible."
+  spec.summary       = "Elasticsearch Ruby output plugin for Embulk. Elasticsearch 1.X AND 2.X AND 5.X compatible."
+  spec.description   = "Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X AND 5.X compatible."
   spec.email         = ["toyama0919@gmail.com"]
   spec.licenses      = ["MIT"]
   spec.homepage      = "https://github.com/toyama0919/embulk-output-elasticsearch_ruby"
