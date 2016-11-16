@@ -6,14 +6,14 @@ module Embulk
 
     class Elasticsearch < OutputPlugin
       Plugin.register_output("elasticsearch_ruby", self)
+      ENABLE_MODE = %w[normal update replace]
 
       def self.transaction(config, schema, count, &control)
         task = {
           "nodes" => config.param("nodes", :array),
           "request_timeout" => config.param("request_timeout", :integer, default: 60),
           "index" => config.param("index", :string),
-          "replace_mode" => config.param("replace_mode", :bool, default: false),
-          "update_mode" => config.param("update_mode", :bool, default: false),
+          "mode" => config.param("mode", :string, default: 'normal'),
           "reload_connections" => config.param("reload_connections", :bool, default: true),
           "reload_on_failure" => config.param("reload_on_failure", :bool, default: false),
           "delete_old_index" => config.param("delete_old_index", :bool, default: false),
@@ -27,9 +27,10 @@ module Embulk
         }
         task['time_value'] = Time.now.strftime('%Y.%m.%d.%H.%M.%S')
 
-        if task['replace_mode'] and task['update_mode']
-          raise "Cannot choose both of replace and update. Please choose one of them."
+        unless ENABLE_MODE.include?(task['mode'])
+          raise ConfigError.new "`mode` must be one of #{ENABLE_MODE.join(', ')}"
         end
+        Embulk.logger.info("mode => #{task['mode']}")
 
         task_reports = yield(task)
         next_config_diff = {}
@@ -37,7 +38,7 @@ module Embulk
       end
 
       def self.cleanup(task, schema, count, task_reports)
-        if task['replace_mode']
+        if task['mode'] == 'replace'
           client = create_client(task)
           create_aliases(client, task['index'], get_index(task))
           delete_aliases(client, task)
@@ -85,7 +86,7 @@ module Embulk
       end
 
       def self.get_index(task)
-        task['replace_mode'] ? "#{get_index_prefix(task)}-#{task['time_value']}" : task['index']
+        task['mode'] == 'replace' ? "#{get_index_prefix(task)}-#{task['time_value']}" : task['index']
       end
 
       def self.get_index_prefix(task)
@@ -107,7 +108,7 @@ module Embulk
         @bulk_actions = task["bulk_actions"]
         @array_columns = task["array_columns"]
         @retry_on_failure = task["retry_on_failure"]
-        @update_mode = task["update_mode"]
+        @mode = task["mode"]
         @index = self.class.get_index(task)
 
         @client = self.class.create_client(task)
@@ -120,7 +121,7 @@ module Embulk
       def add(page)
         page.each do |record|
           hash = Hash[schema.names.zip(record)]
-          action = @update_mode ? :update : :index
+          action = (@mode == 'update') ? :update : :index
           meta = {}
           meta[action] = { _index: @index, _type: @index_type }
           meta[action][:_id] = generate_id(@id_format, hash, @id_keys) unless @id_keys.nil?
@@ -163,7 +164,7 @@ module Embulk
             end
           end
         }
-        @update_mode ? {doc: result} : result
+        (@mode == 'update') ? {doc: result} : result
       end
 
       def generate_id(template, record, id_keys)
