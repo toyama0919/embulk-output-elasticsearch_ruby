@@ -23,6 +23,9 @@ Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X AND 5.X compatibl
   - **id_keys**: id_keys (array, default: nil)
   - **id_format**: id_format (string, default: nil)
   - **array_columns**: array_columns (array, default: nil)
+    - **name**: Array convert column. (string)
+    - **delimiter**: delimiter for split. (string)
+    - **is_integer**: to integer. (bool)
   - **bulk_actions**: bulk_actions (integer, default: 1000)
   - **retry_on_failure**: retry_on_failure (integer, default: 5)
 
