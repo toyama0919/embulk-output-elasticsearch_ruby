@@ -10,9 +10,9 @@ module Embulk
 
       def self.transaction(config, schema, count, &control)
         task = {
-          "nodes" => config.param("nodes", :array),
+          "nodes" => config.param("nodes", :array, default: [{ 'host' => 'localhost', 'port' => 9200 }]),
           "request_timeout" => config.param("request_timeout", :integer, default: 60),
-          "index" => config.param("index", :string),
+          "index" => config.param("index", :string, default: 'logstash-%Y.%m.%d'),
           "mode" => config.param("mode", :string, default: 'normal'),
           "reload_connections" => config.param("reload_connections", :bool, default: true),
           "reload_on_failure" => config.param("reload_on_failure", :bool, default: false),
@@ -26,6 +26,7 @@ module Embulk
           "time_key" => config.param("time_key", :string, default: nil),
         }
         task['time_value'] = Time.now.strftime('%Y.%m.%d.%H.%M.%S')
+        task['index'] = Time.now.strftime(task['index'])
 
         unless ENABLE_MODE.include?(task['mode'])
           raise ConfigError.new "`mode` must be one of #{ENABLE_MODE.join(', ')}"

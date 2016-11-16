@@ -10,12 +10,12 @@ Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X AND 5.X compatibl
 * **Cleanup supported**: yes
 
 ## Configuration
-  - **nodes**: nodes (array)
+  - **nodes**: nodes (array, default: [{ 'host' => 'localhost', 'port' => 9200 }])
     - **host**: index (string)
     - **port**: index (integer)
   - **request_timeout**: request_timeout (integer, default: 60)
-  - **index**: index (string)
-  - **mode**: mode (string, normal or update or replace])
+  - **index**: index (string, , default: 'logstash-%Y.%m.%d')
+  - **mode**: mode, normal or update or replace (string, default: normal)
   - **reload_connections**: reload_connections (bool, default: true)
   - **reload_on_failure**: reload_on_failure (bool, default: false)
   - **delete_old_index**: delete_old_index (bool, default: false)
@@ -34,7 +34,6 @@ out:
   type: elasticsearch_ruby
   nodes:
     - {host: localhost, port: 9200}
-  index: crawl
   index_type: page
 ```
 
