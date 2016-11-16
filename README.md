@@ -15,8 +15,7 @@ Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X compatible.
     - **port**: index (integer)
   - **request_timeout**: request_timeout (integer, default: 60)
   - **index**: index (string)
-  - **replace_mode**: replace_mode (bool, default: false)
-  - **update_mode**: update_mode (bool, default: false)
+  - **mode**: mode (string, normal or update or replace])
   - **reload_connections**: reload_connections (bool, default: true)
   - **reload_on_failure**: reload_on_failure (bool, default: false)
   - **delete_old_index**: delete_old_index (bool, default: false)
@@ -39,7 +38,7 @@ out:
   index_type: page
   bulk_actions: 1000
   request_timeout: 60
-  update_mode: true
+  mode: update
   id_format: "%s"
   id_keys:
     - _id
