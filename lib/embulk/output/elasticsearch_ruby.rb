@@ -23,6 +23,8 @@ module Embulk
           "array_columns" => config.param("array_columns", :array, default: nil),
           "bulk_actions" => config.param("bulk_actions", :integer, default: 1000),
           "retry_on_failure" => config.param("retry_on_failure", :integer, default: 5),
+          "before_template_name" => config.param("before_template_name", :string, default: nil),
+          "before_template" => config.param("before_template", :hash, default: nil),
         }
         task['time_value'] = Time.now.strftime('%Y.%m.%d.%H.%M.%S')
         task['index'] = Time.now.strftime(task['index'])
@@ -31,6 +33,12 @@ module Embulk
           raise ConfigError.new "`mode` must be one of #{ENABLE_MODE.join(', ')}"
         end
         Embulk.logger.info("mode => #{task['mode']}")
+
+        if task['before_template_name'] && task['before_template']
+          client = create_client(task)
+          Embulk.logger.info("put template => #{task['before_template_name']}")
+          client.indices.put_template name: task['before_template_name'], body: task['before_template']
+        end
 
         task_reports = yield(task)
         next_config_diff = {}
