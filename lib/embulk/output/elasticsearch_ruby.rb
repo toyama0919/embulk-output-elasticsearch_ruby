@@ -79,8 +79,7 @@ module Embulk
       end
 
       def self.delete_aliases(client, task)
-        indices = client.indices.get_aliases.select { |key, value| value['aliases'].include? task['index'] }.keys
-        indices = indices.select { |index| /^#{get_index_prefix(task)}-(\d*)/ =~ index }
+        indices = client.indices.get_alias(name: task['index']).keys
         indices.each { |index|
           if index != get_index(task)
             client.indices.delete_alias index: index, name: task['index']
