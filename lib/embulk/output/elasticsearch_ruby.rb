@@ -17,6 +17,7 @@ module Embulk
           "reload_connections" => config.param("reload_connections", :bool, default: true),
           "reload_on_failure" => config.param("reload_on_failure", :bool, default: false),
           "delete_old_index" => config.param("delete_old_index", :bool, default: false),
+          "delete_old_alias" => config.param("delete_old_alias", :bool, default: true),
           "index_type" => config.param("index_type", :string),
           "id_keys" => config.param("id_keys", :array, default: nil),
           "id_format" => config.param("id_format", :string, default: nil),
@@ -89,8 +90,10 @@ module Embulk
         indices = client.indices.get_alias(name: task['index']).keys
         indices.each { |index|
           if index != get_index(task)
-            client.indices.delete_alias index: index, name: task['index']
-            Embulk.logger.info "deleted alias: #{task['index']}, index: #{index}"
+            if task['delete_old_alias']
+              client.indices.delete_alias index: index, name: task['index']
+              Embulk.logger.info "deleted alias: #{task['index']}, index: #{index}"
+            end
             if task['delete_old_index']
               client.indices.delete index: index
               Embulk.logger.info "deleted index: #{index}"
