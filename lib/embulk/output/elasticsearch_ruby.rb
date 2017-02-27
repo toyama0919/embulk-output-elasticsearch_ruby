@@ -25,9 +25,16 @@ module Embulk
           "retry_on_failure" => config.param("retry_on_failure", :integer, default: 5),
           "before_template_name" => config.param("before_template_name", :string, default: nil),
           "before_template" => config.param("before_template", :hash, default: nil),
+          "current_index_name" => config.param("current_index_name", :string, default: nil),
         }
         task['time_value'] = Time.now.strftime('%Y.%m.%d.%H.%M.%S')
         task['index'] = Time.now.strftime(task['index'])
+
+        task['current_index_name'] = if task['current_index_name']
+          task['current_index_name']
+        else
+          "#{task['index']}-#{task['index_type']}-#{task['time_value']}"
+        end
 
         unless ENABLE_MODE.include?(task['mode'])
           raise ConfigError.new "`mode` must be one of #{ENABLE_MODE.join(', ')}"
@@ -93,11 +100,7 @@ module Embulk
       end
 
       def self.get_index(task)
-        task['mode'] == 'replace' ? "#{get_index_prefix(task)}-#{task['time_value']}" : task['index']
-      end
-
-      def self.get_index_prefix(task)
-        "#{task['index']}-#{task['index_type']}"
+        task['mode'] == 'replace' ? task['current_index_name'] : task['index']
       end
 
       #def self.resume(task, schema, count, &control)
