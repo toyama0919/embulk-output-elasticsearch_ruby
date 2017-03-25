@@ -29,7 +29,7 @@ Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X AND 5.X compatibl
   - **bulk_actions**: bulk_actions (integer, default: 1000)
   - **retry_on_failure**: retry_on_failure (integer, default: 5)
 
-## Example
+## Example(minimum settings)
 
 ```yaml
 out:
