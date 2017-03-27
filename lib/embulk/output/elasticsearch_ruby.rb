@@ -1,5 +1,3 @@
-require 'excon'
-require 'elasticsearch'
 require_relative 'elasticsearch/connection'
 
 module Embulk
