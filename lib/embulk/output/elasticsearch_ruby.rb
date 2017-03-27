@@ -41,6 +41,10 @@ module Embulk
         else
           task['index'] = Time.now.strftime(index)
         end
+        Embulk.logger.info("nodes => #{task['nodes']}")
+        Embulk.logger.info("index => #{task['index']}")
+        Embulk.logger.info("index_type => #{task['index_type']}")
+        Embulk.logger.info("alias => #{task['alias']}")
 
         connection = Connection.new(task)
         before_delete_index = config.param("before_delete_index", :bool, default: false)
