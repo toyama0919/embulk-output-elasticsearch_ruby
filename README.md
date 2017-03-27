@@ -1,4 +1,7 @@
-# Elasticsearch Ruby output plugin for Embulk [![Gem Version](https://badge.fury.io/rb/embulk-output-elasticsearch_ruby.svg)](http://badge.fury.io/rb/embulk-output-elasticsearch_ruby)
+# Elasticsearch Ruby output plugin for Embulk
+
+[![Gem Version](https://badge.fury.io/rb/embulk-output-elasticsearch_ruby.svg)](http://badge.fury.io/rb/embulk-output-elasticsearch_ruby)
+[![Build Status](https://secure.travis-ci.org/toyama0919/embulk-output-elasticsearch_ruby.png?branch=master)](http://travis-ci.org/toyama0919/embulk-output-elasticsearch_ruby)
 
 Dumps records to Elasticsearch Ruby. Elasticsearch 1.X AND 2.X AND 5.X compatible.
 
