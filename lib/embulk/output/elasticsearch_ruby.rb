@@ -34,20 +34,25 @@ module Embulk
         current_index_name = config.param("current_index_name", :string, default: nil)
         index = config.param("index", :string, default: 'logstash-%Y.%m.%d')
         if task['mode'] == 'replace'
+          task['alias'] = index
           task['index'] = if current_index_name
             current_index_name
           else
             "#{index}-#{task['index_type']}-#{Time.now.strftime('%Y.%m.%d.%H.%M.%S')}"
           end
-          task['alias'] = index
         else
           task['index'] = Time.now.strftime(index)
+        end
+
+        connection = Connection.new(task)
+        before_delete_index = config.param("before_delete_index", :bool, default: false)
+        if before_delete_index
+          connection.delete_index(task['index'])
         end
 
         before_template_name = config.param("before_template_name", :string, default: nil)
         before_template = config.param("before_template", :hash, default: nil)
         if before_template_name && before_template
-          connection = Connection.new(task)
           connection.put_template(before_template_name, before_template)
         end
 

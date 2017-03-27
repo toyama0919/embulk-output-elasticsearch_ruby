@@ -66,10 +66,17 @@ module Embulk
                 Embulk.logger.info "deleted alias: #{@alias}, index: #{index}"
               end
               if @delete_old_index
-                @client.indices.delete index: index
-                Embulk.logger.info "deleted index: #{index}"
+                delete_index(index)
               end
             end
+          end
+        end
+
+        def delete_index(index)
+          indices = @client.cat.indices(format: 'json')
+          if indices.any? { |i| i['index'] == index }
+            @client.indices.delete index: index
+            Embulk.logger.info "deleted index: #{index}"
           end
         end
 
